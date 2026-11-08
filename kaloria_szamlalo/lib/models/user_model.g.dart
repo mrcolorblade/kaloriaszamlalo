@@ -20,7 +20,7 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       username: fields[0] as String,
       isMale: fields[1] as bool,
       age: fields[2] as int,
-      height: fields[3] as double,
+      height: fields[3] as int,
       weight: fields[4] as double,
       calorieGoal: fields[5] as int,
     );

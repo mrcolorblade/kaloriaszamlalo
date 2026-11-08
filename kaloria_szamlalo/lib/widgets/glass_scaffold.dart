@@ -1,47 +1,57 @@
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
-class GlassCard extends StatelessWidget {
-  final Widget child;
-  final double borderRadius;
-  final double blur;
-  final double opacity;
-  final EdgeInsetsGeometry? padding;
-  final EdgeInsetsGeometry? margin;
-  final Color? borderColor;
+class GlassScaffold extends StatelessWidget {
+  final Widget body;
 
-  const GlassCard({
+  const GlassScaffold({
     super.key,
-    required this.child,
-    this.borderRadius = 28.0,
-    this.blur = 18.0,
-    this.opacity = 0.08,
-    this.padding,
-    this.margin,
-    this.borderColor,
+    required this.body,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: margin,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(borderRadius),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-          child: Container(
-            padding: padding,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: opacity),
-              borderRadius: BorderRadius.circular(borderRadius),
-              border: Border.all(
-                color: borderColor ?? Colors.white.withValues(alpha: 0.12),
-                width: 1.0,
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F0B1E),
+      body: Stack(
+        children: [
+          Positioned(
+            top: 120,
+            left: -60,
+            child: Container(
+              width: 260,
+              height: 260,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF6B42D6).withValues(alpha: 0.35),
               ),
             ),
-            child: child,
           ),
-        ),
+          Positioned(
+            top: 40,
+            right: -40,
+            child: Container(
+              width: 220,
+              height: 220,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF9055FF).withValues(alpha: 0.30),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 60,
+            left: -50,
+            child: Container(
+              width: 280,
+              height: 280,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF4C2A9E).withValues(alpha: 0.35),
+              ),
+            ),
+          ),
+          SafeArea(child: body),
+        ],
       ),
     );
   }
