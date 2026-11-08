@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'models/user_model.dart';
 import 'screens/onboarding_screen.dart';
+import 'models/calorie_entry.dart';
+import 'screens/home_screen.dart';
 
 Future<void> main() async {
   // Flutter binding biztosítása az aszinkron Hive inithez
@@ -12,9 +14,11 @@ Future<void> main() async {
 
   // A generált UserModel adapter regisztrációja
   Hive.registerAdapter(UserModelAdapter());
+  Hive.registerAdapter(CalorieEntryAdapter());
 
   // Megnyitjuk a felhasználói adatokat tároló dobozt
   final userBox = await Hive.openBox<UserModel>('userBox');
+  await Hive.openBox<CalorieEntry>('calorieBox');
 
   // Megnézzük, van-e már elmentve 'currentUser'
   final bool hasProfile = userBox.containsKey('currentUser');
@@ -38,52 +42,7 @@ class KaloriaApp extends StatelessWidget {
         fontFamily: 'SF Pro Display', // iOS natív érzet, ha nincs egyedi betű beállítva fallbackol
       ),
       // Ha van profil, mehet a főoldal, ha nincs, az onboarding
-      home: hasProfile ? const PlaceholderHomeScreen() : const OnboardingScreen(),
-    );
-  }
-}
-
-// Ideiglenes helyőrző, amíg a következő lépésben meg nem írjuk a végleges HomeScreen-t
-class PlaceholderHomeScreen extends StatelessWidget {
-  const PlaceholderHomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final box = Hive.box<UserModel>('userBox');
-    final user = box.get('currentUser');
-
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F0B1E),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Üdvözöllek, ${user?.username ?? "Felhasználó"}!',
-              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Cél: ${user?.calorieGoal} kcal | BMI: ${user?.bmi.toStringAsFixed(1)} (${user?.bmiCategory})',
-              style: const TextStyle(color: Colors.white70, fontSize: 16),
-            ),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: () async {
-                // Teszteléshez: profil törlése, hogy újra lásd az onboarding képernyőt
-                await box.clear();
-                if (context.mounted) {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (_) => const OnboardingScreen()),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-              child: const Text('Profil törlése (Teszt reset)', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
-      ),
+      home: hasProfile ? const HomeScreen() : const OnboardingScreen(),
     );
   }
 }

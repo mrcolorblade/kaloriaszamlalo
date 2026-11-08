@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import '../main.dart';
 import '../models/user_model.dart';
 import '../services/calorie_calculator.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/glass_scaffold.dart';
+import 'home_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -256,7 +256,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (!mounted) return;
 
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const PlaceholderHomeScreen()),
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
     );
   }
 
