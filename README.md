@@ -1,0 +1,2 @@
+# kaloriaszamlalo
+Kalóriaszámláló app (Flutter)
