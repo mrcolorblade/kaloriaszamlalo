@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import '../main.dart';
 import '../models/user_model.dart';
 import '../services/calorie_calculator.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/glass_scaffold.dart';
-import '../main.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -32,31 +32,180 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   void _calculateAutoCalories() {
     final int? age = int.tryParse(_ageController.text);
     final int? height = int.tryParse(_heightController.text);
     final double? weight = double.tryParse(_weightController.text.replaceAll(',', '.'));
 
     if (age == null || height == null || weight == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Kérlek add meg a nemet, kort, magasságot és súlyt az automatikus számításhoz!'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      _showError('Kérlek töltsd ki az életkort, magasságot és súlyt!');
       return;
     }
 
-    final calculated = CalorieCalculator.calculateMaintenanceCalories(
-      isMale: _isMale,
-      weightKg: weight,
-      heightCm: height,
-      age: age,
-    );
+    if (age < 10 || age > 120) {
+      _showError('Az életkornak 10 és 120 év között kell lennie!');
+      return;
+    }
+    if (height < 100 || height > 250) {
+      _showError('A magasságnak 100 és 250 cm között kell lennie!');
+      return;
+    }
+    if (weight < 30 || weight > 350) {
+      _showError('A testsúlynak 30 és 350 kg között kell lennie!');
+      return;
+    }
 
-    setState(() {
-      _calorieController.text = calculated.toString();
-    });
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF161129),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Mi a célod?',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Válaszd ki a stratégiádat az optimális kalóriamennyiséghez.',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 20),
+              _buildGoalOption(
+                title: 'Fogyás / Szálkásítás',
+                subtitle: '-400 kcal kalóriadeficit',
+                icon: Icons.trending_down_rounded,
+                goal: GoalType.weightLoss,
+                age: age,
+                height: height,
+                weight: weight,
+              ),
+              const SizedBox(height: 10),
+              _buildGoalOption(
+                title: 'Súlytartás',
+                subtitle: 'Fenntartó kalóriaszint megtartása',
+                icon: Icons.balance_rounded,
+                goal: GoalType.maintenance,
+                age: age,
+                height: height,
+                weight: weight,
+              ),
+              const SizedBox(height: 10),
+              _buildGoalOption(
+                title: 'Tömegnövelés / Izomépítés',
+                subtitle: '+300 kcal kalóriatöbblet',
+                icon: Icons.fitness_center_rounded,
+                goal: GoalType.muscleGain,
+                age: age,
+                height: height,
+                weight: weight,
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildGoalOption({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required GoalType goal,
+    required int age,
+    required int height,
+    required double weight,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        final calculated = CalorieCalculator.calculateGoalCalories(
+          isMale: _isMale,
+          weightKg: weight,
+          heightCm: height,
+          age: age,
+          goal: goal,
+        );
+        setState(() {
+          _calorieController.text = calculated.toString();
+        });
+        Navigator.pop(context);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.1),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF6B42D6).withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.white.withValues(alpha: 0.4),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _saveProfile() async {
@@ -67,21 +216,37 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final int? calorieGoal = int.tryParse(_calorieController.text);
 
     if (username.isEmpty || age == null || height == null || weight == null || calorieGoal == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Kérlek tölts ki minden mezőt!'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      _showError('Kérlek tölts ki minden mezőt!');
       return;
     }
 
-final user = UserModel(
+    if (username.length < 2 || username.length > 20) {
+      _showError('A név 2 és 20 karakter közötti legyen!');
+      return;
+    }
+    if (age < 10 || age > 120) {
+      _showError('Érvénytelen életkor (10-120)!');
+      return;
+    }
+    if (height < 100 || height > 250) {
+      _showError('Érvénytelen magasság (100-250 cm)!');
+      return;
+    }
+    if (weight < 30 || weight > 350) {
+      _showError('Érvénytelen testsúly (30-350 kg)!');
+      return;
+    }
+    if (calorieGoal < 800 || calorieGoal > 10000) {
+      _showError('A napi kalóriacélnak 800 és 10 000 kcal között kell lennie!');
+      return;
+    }
+
+    final user = UserModel(
       username: username,
       isMale: _isMale,
       age: age,
       height: height,
-      weight: weight, // Biztosítjuk, hogy double legyen
+      weight: weight,
       calorieGoal: calorieGoal,
     );
 
@@ -89,14 +254,6 @@ final user = UserModel(
     await box.put('currentUser', user);
 
     if (!mounted) return;
-
-    // Átirányítás a HomeScreen-re, amint elkészül
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Profil sikeresen mentve!'),
-        backgroundColor: Colors.green,
-      ),
-    );
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const PlaceholderHomeScreen()),
@@ -110,7 +267,6 @@ final user = UserModel(
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
         child: Column(
           children: [
-            // Felső pirula címke: "Profil beállítása"
             GlassCard(
               borderRadius: 30,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
@@ -124,8 +280,6 @@ final user = UserModel(
               ),
             ),
             const SizedBox(height: 24),
-
-            // Főcím és leírás
             const Text(
               'Kezdjük veled!',
               style: TextStyle(
@@ -145,8 +299,6 @@ final user = UserModel(
               ),
             ),
             const SizedBox(height: 28),
-
-            // Fő üvegkártya a form mezőkkel
             GlassCard(
               padding: const EdgeInsets.all(20.0),
               child: Column(
@@ -159,8 +311,6 @@ final user = UserModel(
                     hintText: 'alex_fit',
                   ),
                   const SizedBox(height: 18),
-
-                  // Nem és Életkor egy sorban
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -185,7 +335,7 @@ final user = UserModel(
                             const SizedBox(height: 6),
                             _buildInputField(
                               controller: _ageController,
-                              hintText: '25',
+                              hintText: '30',
                               suffix: 'év',
                               keyboardType: TextInputType.number,
                             ),
@@ -195,8 +345,6 @@ final user = UserModel(
                     ],
                   ),
                   const SizedBox(height: 18),
-
-                  // Magasság és Testsúly egy sorban
                   Row(
                     children: [
                       Expanded(
@@ -233,8 +381,6 @@ final user = UserModel(
                     ],
                   ),
                   const SizedBox(height: 18),
-
-                  // Maximális kalóriaérték sor automata gombbal
                   _buildLabel('Maximális kalóriaérték'),
                   const SizedBox(height: 6),
                   Row(
@@ -294,8 +440,6 @@ final user = UserModel(
               ),
             ),
             const SizedBox(height: 24),
-
-            // Mentés és kezdés gomb
             SizedBox(
               width: double.infinity,
               height: 54,

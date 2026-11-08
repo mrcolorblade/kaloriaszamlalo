@@ -42,9 +42,10 @@ class UserModel extends HiveObject {
   //Szöveg return
   String? get bmiCategory {
     final val = bmi;
-    if (val < 18.5) return "Alacsony";
-    if (val <= 24.9) return "Normál";
-    if (val <= 29.9) return "Túlsúlyos";
+    if (val < 18.5) return "Alacsony 🥹";
+    if (val <= 24.9) return "Normál 😊";
+    if (val <= 29.9) return "Túlsúlyos ☹️";
+    return "Elhízott 💀";
   }
 
 }

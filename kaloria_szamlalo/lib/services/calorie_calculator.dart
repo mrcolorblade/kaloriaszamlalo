@@ -1,6 +1,10 @@
-class CalorieCalculator {
+enum GoalType {
+  weightLoss,    // Fogyás (-400 kcal)
+  maintenance,   // Súlytartás (0 kcal)
+  muscleGain,    // Tömegnövelés / izomépítés (+300 kcal)
+}
 
-  //BMR
+class CalorieCalculator {
   static double calculateBMR({
     required bool isMale,
     required double weightKg,
@@ -14,17 +18,32 @@ class CalorieCalculator {
     }
   }
 
-  //Ajanlott napoi kaloria bevitel
-  static int calculateMaintenanceCalories({
+  static int calculateGoalCalories({
     required bool isMale,
     required double weightKg,
     required int heightCm,
     required int age,
+    required GoalType goal,
   }) {
-    final bmr = calculateBMR(isMale: isMale, weightKg: weightKg, heightCm: heightCm, age: age);
+    final bmr = calculateBMR(
+      isMale: isMale,
+      weightKg: weightKg,
+      heightCm: heightCm,
+      age: age,
+    );
 
-    final totalDailyEnergyExpenditure = bmr * 1.2;
-    return totalDailyEnergyExpenditure.round();
+    // Alap fenntartó energiaszükséglet enyhe mozgással (~1.2 szorzó)
+    final maintenance = (bmr * 1.2).round();
+
+    switch (goal) {
+      case GoalType.weightLoss:
+        // Biztonságos deficit, de ne menjen a nyers BMR alá
+        final deficit = maintenance - 400;
+        return deficit < bmr.round() ? bmr.round() : deficit;
+      case GoalType.maintenance:
+        return maintenance;
+      case GoalType.muscleGain:
+        return maintenance + 300;
+    }
   }
-
 }
