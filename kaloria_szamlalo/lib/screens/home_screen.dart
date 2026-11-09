@@ -321,6 +321,9 @@ class _HomeScreenState extends State<HomeScreen> {
     required ({String label, Color color}) bmiInfo,
     required Box<CalorieEntry> entryBox,
   }) {
+
+    final int remainingCalories = goalCalories - consumedCalories;
+
     return Column(
       children: [
         const Spacer(flex: 1),
@@ -437,6 +440,37 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
+
+              Positioned(
+                left: 22,
+                bottom: 24,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Fennmaradt',
+                      style: TextStyle(
+                        color: Color(0xFF94A3B8),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${remainingCalories < 0 ? 0 : remainingCalories} kcal',
+                      style: TextStyle(
+                        color: remainingCalories < 0 ? const Color(0xFFEF4444) : Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               Positioned(
                 right: 22,
                 bottom: 22,
