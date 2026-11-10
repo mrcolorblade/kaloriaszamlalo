@@ -6,6 +6,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../models/calorie_entry.dart';
 import '../models/user_model.dart';
 import 'settings_screen.dart';
+import 'stats_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -190,9 +191,12 @@ class _HomeScreenState extends State<HomeScreen> {
               return Stack(
                 fit: StackFit.expand,
                 children: [
+                  // 1. Háttér
                   Positioned.fill(
                     child: _PearlAtmosphereBackground(alertFactor: animatedAlertFactor),
                   ),
+
+                  // 2. Fő tartalom és rögzített lebegő Navbar
                   SafeArea(
                     child: LayoutBuilder(
                       builder: (context, constraints) {
@@ -203,68 +207,74 @@ class _HomeScreenState extends State<HomeScreen> {
                         final double titlePillWidth = (screenW * 0.57).clamp(200.0, 280.0);
                         final double navBarWidth = (screenW - 48.0).clamp(280.0, 420.0);
 
-                        return SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              minWidth: screenW,
-                              minHeight: screenH,
-                            ),
-                            child: IntrinsicHeight(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Expanded(
-                                      child: _buildCurrentTabContent(
-                                        cardWidth: cardWidth,
-                                        titlePillWidth: titlePillWidth,
-                                        user: user,
-                                        consumedCalories: consumedCalories,
-                                        goalCalories: goalCalories,
-                                        targetPercent: targetPercent,
-                                        activeColor: activeColor,
-                                        bmiInfo: bmiInfo,
-                                        entryBox: entryBox,
-                                      ),
+                        return Stack(
+                          children: [
+                            // Görgethető tartalom (alul 100px helyet hagy a navbarnak!)
+                            Positioned.fill(
+                              child: SingleChildScrollView(
+                                physics: const BouncingScrollPhysics(),
+                                padding: const EdgeInsets.only(top: 16, bottom: 100),
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    minWidth: screenW,
+                                    minHeight: screenH - 116,
+                                  ),
+                                  child: IntrinsicHeight(
+                                    child: _buildCurrentTabContent(
+                                      cardWidth: cardWidth,
+                                      titlePillWidth: titlePillWidth,
+                                      user: user,
+                                      consumedCalories: consumedCalories,
+                                      goalCalories: goalCalories,
+                                      targetPercent: targetPercent,
+                                      activeColor: activeColor,
+                                      bmiInfo: bmiInfo,
+                                      entryBox: entryBox,
                                     ),
-                                    const SizedBox(height: 16),
-                                    _FigmaGlassContainer(
-                                      width: navBarWidth,
-                                      height: 64,
-                                      borderRadius: 32,
-                                      fillOpacity: 0.102,
-                                      blurSigma: 12,
-                                      shadowBlur: 24,
-                                      shadowOffset: const Offset(0, 12),
-                                      padding: const EdgeInsets.symmetric(horizontal: 28),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          _buildNavItem(
-                                            index: 0,
-                                            label: 'Kezdőlap',
-                                            iconType: _NavIconType.home,
-                                          ),
-                                          _buildNavItem(
-                                            index: 1,
-                                            label: 'Stats',
-                                            iconType: _NavIconType.stats,
-                                          ),
-                                          _buildNavItem(
-                                            index: 2,
-                                            label: 'Beállítások',
-                                            iconType: _NavIconType.settings,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
+
+                            // Rögzített lebegő navigációs sáv (mindig a kijelző alján marad!)
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 16,
+                              child: Center(
+                                child: _FigmaGlassContainer(
+                                  width: navBarWidth,
+                                  height: 64,
+                                  borderRadius: 32,
+                                  fillOpacity: 0.102,
+                                  blurSigma: 12,
+                                  shadowBlur: 24,
+                                  shadowOffset: const Offset(0, 12),
+                                  padding: const EdgeInsets.symmetric(horizontal: 28),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      _buildNavItem(
+                                        index: 0,
+                                        label: 'Kezdőlap',
+                                        iconType: _NavIconType.home,
+                                      ),
+                                      _buildNavItem(
+                                        index: 1,
+                                        label: 'Stats',
+                                        iconType: _NavIconType.stats,
+                                      ),
+                                      _buildNavItem(
+                                        index: 2,
+                                        label: 'Beállítások',
+                                        iconType: _NavIconType.settings,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         );
                       },
                     ),
@@ -295,7 +305,10 @@ class _HomeScreenState extends State<HomeScreen> {
         titlePillWidth: titlePillWidth,
       );
     } else if (_selectedNavIndex == 1) {
-      return _buildStatsPlaceholder(titlePillWidth, cardWidth);
+      return StatsScreen(
+        cardWidth: cardWidth,
+        titlePillWidth: titlePillWidth,
+      );
     }
     return _buildHomeDashboard(
       cardWidth: cardWidth,
@@ -321,7 +334,6 @@ class _HomeScreenState extends State<HomeScreen> {
     required ({String label, Color color}) bmiInfo,
     required Box<CalorieEntry> entryBox,
   }) {
-
     final int remainingCalories = goalCalories - consumedCalories;
 
     return Column(
@@ -375,10 +387,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     '${user?.username.toUpperCase() ?? "USERNAME"}!',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: GoogleFonts.happyMonkey(
                       color: Colors.white,
                       fontSize: 24,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w400,
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -441,9 +453,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
+              // Bal alsó "Fennmaradt: XY kcal" kijelző
               Positioned(
-                left: 22,
-                bottom: 24,
+                left: 15,
+                bottom: 12,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -471,6 +484,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
+              // Jobb alsó "+" gomb
               Positioned(
                 right: 22,
                 bottom: 22,
@@ -604,50 +618,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         const Spacer(flex: 2),
-      ],
-    );
-  }
-
-  Widget _buildStatsPlaceholder(double titlePillWidth, double cardWidth) {
-    return Column(
-      children: [
-        const SizedBox(height: 16),
-        _FigmaGlassContainer(
-          width: titlePillWidth,
-          height: 64,
-          borderRadius: 999,
-          fillOpacity: 0.078,
-          blurSigma: 10,
-          shadowBlur: 20,
-          shadowOffset: const Offset(0, 8),
-          shadowOpacity: 0.15,
-          child: const Center(
-            child: Text(
-              'Statisztika',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                letterSpacing: -0.3,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 60),
-        _FigmaGlassContainer(
-          width: cardWidth,
-          height: 120,
-          borderRadius: 28,
-          fillOpacity: 0.071,
-          blurSigma: 12,
-          child: const Center(
-            child: Text(
-              'Hamarosan...',
-              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 16),
-            ),
-          ),
-        ),
-        const Spacer(),
       ],
     );
   }
