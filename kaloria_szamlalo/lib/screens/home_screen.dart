@@ -387,10 +387,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     '${user?.username.toUpperCase() ?? "USERNAME"}!',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.happyMonkey(
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
-                      fontWeight: FontWeight.w400,
+                      fontWeight: FontWeight.w900,
                       letterSpacing: 0.5,
                     ),
                   ),
