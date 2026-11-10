@@ -1,0 +1,45 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: kaloria_szamlalo # Belép a belső Flutter mappába
+
+    steps:
+      - name: Forráskód letöltése
+        uses: actions/checkout@v4
+
+      - name: Java beállítása
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Flutter beállítása
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Függőségek letöltése
+        run: flutter pub get
+
+      - name: iOS alkalmazás fordítása (aláírás nélkül)
+        run: flutter build ios --release --no-codesign
+
+      - name: IPA csomagolása
+        run: |
+          mkdir -p Payload
+          mv build/ios/iphoneos/Runner.app Payload/
+          zip -r -9 KaloriaSzamlalo.ipa Payload
+
+      - name: IPA feltöltése Artifactként
+        uses: actions/upload-artifact@v4
+        with:
+          name: kaloria-release-ipa
+          path: kaloria_szamlalo/KaloriaSzamlalo.ipa
