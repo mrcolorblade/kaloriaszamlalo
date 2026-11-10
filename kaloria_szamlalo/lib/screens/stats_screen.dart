@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/calorie_entry.dart';
 import '../models/user_model.dart';
+import '../services/calorie_facts_service.dart';
 
-class StatsScreen extends StatelessWidget {
+class StatsScreen extends StatefulWidget {
   final double cardWidth;
   final double titlePillWidth;
 
@@ -13,6 +14,14 @@ class StatsScreen extends StatelessWidget {
     required this.cardWidth,
     required this.titlePillWidth,
   });
+
+  @override
+  State<StatsScreen> createState() => _StatsScreenState();
+}
+
+class _StatsScreenState extends State<StatsScreen> {
+  FunFactItem? _currentFact;
+  int _lastTotalCalories = -1;
 
   String get _todayKey {
     final now = DateTime.now();
@@ -32,6 +41,13 @@ class StatsScreen extends StatelessWidget {
       return '${parts[0]}. ${parts[1]}. ${parts[2]}.';
     }
     return dateKey;
+  }
+
+  void _refreshFact(int totalCalories) {
+    setState(() {
+      _currentFact = CalorieFactsService.getRandomFact(totalCalories);
+      _lastTotalCalories = totalCalories;
+    });
   }
 
   void _showDayDetails(
@@ -254,7 +270,7 @@ class StatsScreen extends StatelessWidget {
 
         // Felső "Statisztika" pirula
         _buildGlassContainer(
-          width: titlePillWidth,
+          width: widget.titlePillWidth,
           borderRadius: 999,
           fillOpacity: 0.078,
           blurSigma: 10,
@@ -274,85 +290,187 @@ class StatsScreen extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
 
-        // Napok listája ListView helyett tiszta Column-nal (ez hárítja el a fagyást!)
         ValueListenableBuilder(
           valueListenable: entryBox.listenable(),
           builder: (context, Box<CalorieEntry> box, _) {
+            // Összes bevitt kalória számítása a kezdetektől
+            final int allTimeCalories = box.values.fold(0, (sum, e) => sum + e.calories);
+
+            // Ha változott az összesített kalória vagy még nincs kiválasztott tény, inicializáljuk
+            if (_currentFact == null || _lastTotalCalories != allTimeCalories) {
+              _currentFact = CalorieFactsService.getRandomFact(allTimeCalories);
+              _lastTotalCalories = allTimeCalories;
+            }
+
+            // Napok csoportosítása
             final Map<String, List<CalorieEntry>> grouped = {};
             for (final entry in box.values) {
               grouped.putIfAbsent(entry.dateKey, () => []).add(entry);
             }
 
-            final sortedKeys = grouped.keys.toList()
-              ..sort((a, b) => b.compareTo(a));
+            final sortedKeys = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
 
-            if (sortedKeys.isEmpty) {
-              return _buildGlassContainer(
-                width: cardWidth,
-                borderRadius: 28,
-                fillOpacity: 0.071,
-                blurSigma: 12,
-                padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.bar_chart_rounded,
-                      size: 40,
-                      color: Colors.white.withValues(alpha: 0.3),
+            return Column(
+              children: [
+                // 1. ÖSSZESÍTŐ + FUN FACT KÁRTYA (Koppintható újrasorsoláshoz!)
+                GestureDetector(
+                  onTap: () => _refreshFact(allTimeCalories),
+                  child: _buildGlassContainer(
+                    width: widget.cardWidth,
+                    borderRadius: 24,
+                    fillOpacity: 0.08,
+                    blurSigma: 12,
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Összes bevitt kalória',
+                              style: TextStyle(
+                                color: Color(0xFF94A3B8),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                Text(
+                                  _currentFact?.emoji ?? '✨',
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.touch_app_rounded,
+                                  size: 14,
+                                  color: Colors.white.withValues(alpha: 0.35),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '$allTimeCalories kcal',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFA78BFA).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: const Color(0xFFA78BFA).withValues(alpha: 0.25),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _currentFact?.title ?? 'Tudtad?',
+                                style: const TextStyle(
+                                  color: Color(0xFFA78BFA),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                _currentFact?.text ?? '',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                  fontSize: 12,
+                                  height: 1.3,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'Még nincsenek rögzített napjaid',
-                      style: TextStyle(
-                        color: Color(0xFF94A3B8),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              );
-            }
+                const SizedBox(height: 20),
 
-            return SizedBox(
-              width: cardWidth,
-              child: Column(
-                children: [
-                  for (int i = 0; i < sortedKeys.length; i++) ...[
-                    if (i > 0) const SizedBox(height: 12),
-                    Builder(
-                      builder: (context) {
-                        final dateKey = sortedKeys[i];
-                        final dayEntries = grouped[dateKey]!;
-                        final int totalCal = dayEntries.fold(0, (sum, e) => sum + e.calories);
-                        final bool isExceeded = totalCal > goalCalories;
-
-                        final Color baseColor =
-                            isExceeded ? const Color(0xFFEF4444) : const Color(0xFF22C55E);
-
-                        return GestureDetector(
-                          onTap: () => _showDayDetails(
-                            context,
-                            dateKey: dateKey,
-                            entries: dayEntries,
-                            totalCalories: totalCal,
-                            goalCalories: goalCalories,
+                // 2. NAPI BONTÁS KÁRTYÁK
+                if (sortedKeys.isEmpty)
+                  _buildGlassContainer(
+                    width: widget.cardWidth,
+                    borderRadius: 28,
+                    fillOpacity: 0.071,
+                    blurSigma: 12,
+                    padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.bar_chart_rounded,
+                          size: 40,
+                          color: Colors.white.withValues(alpha: 0.3),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Még nincsenek rögzített napjaid',
+                          style: TextStyle(
+                            color: Color(0xFF94A3B8),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
                           ),
-                          child: _buildDayTile(
-                            dateLabel: _formatDateLabel(dateKey),
-                            subDate: dateKey,
-                            totalCalories: totalCal,
-                            goalCalories: goalCalories,
-                            baseColor: baseColor,
-                          ),
-                        );
-                      },
+                        ),
+                      ],
                     ),
-                  ],
-                ],
-              ),
+                  )
+                else
+                  SizedBox(
+                    width: widget.cardWidth,
+                    child: Column(
+                      children: [
+                        for (int i = 0; i < sortedKeys.length; i++) ...[
+                          if (i > 0) const SizedBox(height: 12),
+                          Builder(
+                            builder: (context) {
+                              final dateKey = sortedKeys[i];
+                              final dayEntries = grouped[dateKey]!;
+                              final int totalCal =
+                                  dayEntries.fold(0, (sum, e) => sum + e.calories);
+                              final bool isExceeded = totalCal > goalCalories;
+
+                              final Color baseColor =
+                                  isExceeded ? const Color(0xFFEF4444) : const Color(0xFF22C55E);
+
+                              return GestureDetector(
+                                onTap: () => _showDayDetails(
+                                  context,
+                                  dateKey: dateKey,
+                                  entries: dayEntries,
+                                  totalCalories: totalCal,
+                                  goalCalories: goalCalories,
+                                ),
+                                child: _buildDayTile(
+                                  dateLabel: _formatDateLabel(dateKey),
+                                  subDate: dateKey,
+                                  totalCalories: totalCal,
+                                  goalCalories: goalCalories,
+                                  baseColor: baseColor,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+              ],
             );
           },
         ),
