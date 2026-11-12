@@ -23,6 +23,8 @@ Future<void> main() async {
   // Megnézzük, van-e már elmentve 'currentUser'
   final bool hasProfile = userBox.containsKey('currentUser');
 
+  await Hive.openBox('settingsBox');
+
   runApp(KaloriaApp(hasProfile: hasProfile));
 }
 

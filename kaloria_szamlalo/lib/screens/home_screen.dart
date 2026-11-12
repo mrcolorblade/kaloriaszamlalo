@@ -214,25 +214,38 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: SingleChildScrollView(
                                 physics: const BouncingScrollPhysics(),
                                 padding: const EdgeInsets.only(top: 16, bottom: 100),
-                                child: ConstrainedBox(
-                                  constraints: BoxConstraints(
-                                    minWidth: screenW,
-                                    minHeight: screenH - 116,
-                                  ),
-                                  child: IntrinsicHeight(
-                                    child: _buildCurrentTabContent(
-                                      cardWidth: cardWidth,
-                                      titlePillWidth: titlePillWidth,
-                                      user: user,
-                                      consumedCalories: consumedCalories,
-                                      goalCalories: goalCalories,
-                                      targetPercent: targetPercent,
-                                      activeColor: activeColor,
-                                      bmiInfo: bmiInfo,
-                                      entryBox: entryBox,
-                                    ),
-                                  ),
-                                ),
+                                child: _selectedNavIndex == 0
+                                    ? ConstrainedBox(
+                                        constraints: BoxConstraints(
+                                          minWidth: screenW,
+                                          minHeight: screenH - 116,
+                                        ),
+                                        child: IntrinsicHeight(
+                                          child: _buildHomeDashboard(
+                                            cardWidth: cardWidth,
+                                            titlePillWidth: titlePillWidth,
+                                            user: user,
+                                            consumedCalories: consumedCalories,
+                                            goalCalories: goalCalories,
+                                            targetPercent: targetPercent,
+                                            activeColor: activeColor,
+                                            bmiInfo: bmiInfo,
+                                            entryBox: entryBox,
+                                          ),
+                                        ),
+                                      )
+                                    : SizedBox(
+                                        width: screenW,
+                                        child: _selectedNavIndex == 2
+                                            ? SettingsScreen(
+                                                cardWidth: cardWidth,
+                                                titlePillWidth: titlePillWidth,
+                                              )
+                                            : StatsScreen(
+                                                cardWidth: cardWidth,
+                                                titlePillWidth: titlePillWidth,
+                                              ),
+                                      ),
                               ),
                             ),
 
@@ -285,41 +298,6 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
       ),
-    );
-  }
-
-  Widget _buildCurrentTabContent({
-    required double cardWidth,
-    required double titlePillWidth,
-    required UserModel? user,
-    required int consumedCalories,
-    required int goalCalories,
-    required double targetPercent,
-    required Color activeColor,
-    required ({String label, Color color}) bmiInfo,
-    required Box<CalorieEntry> entryBox,
-  }) {
-    if (_selectedNavIndex == 2) {
-      return SettingsScreen(
-        cardWidth: cardWidth,
-        titlePillWidth: titlePillWidth,
-      );
-    } else if (_selectedNavIndex == 1) {
-      return StatsScreen(
-        cardWidth: cardWidth,
-        titlePillWidth: titlePillWidth,
-      );
-    }
-    return _buildHomeDashboard(
-      cardWidth: cardWidth,
-      titlePillWidth: titlePillWidth,
-      user: user,
-      consumedCalories: consumedCalories,
-      goalCalories: goalCalories,
-      targetPercent: targetPercent,
-      activeColor: activeColor,
-      bmiInfo: bmiInfo,
-      entryBox: entryBox,
     );
   }
 
